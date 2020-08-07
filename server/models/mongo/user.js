@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const crypto = require('crypto');
-const util = reuqire('util');
+const util = require('util');
 const pbkd2Async = util.promisify(crypto.pbkdf2);
 const SALT = require('../../cipher').PASSWORD_SALT;
 const Errors = require('../../errors');
@@ -11,7 +11,8 @@ const UserSchema = new Schema({
   nickname: {type: String, required: true},
   sex: String,
   age: {type: Number, max: [90, 'Nobody over 90 would use this website']},
-  phoneNumber: String,
+  phone: String,
+  username: {type: String, unique: true},
   password: String,
   avatar: String,
   level: Number,
@@ -29,7 +30,8 @@ async function createNewUser(params) {
     name,
     password,
     age,
-    phoneNumber,
+    phone,
+    username,
     nickname,
     sex,
     level,
@@ -41,10 +43,11 @@ async function createNewUser(params) {
 
   const user = new UserModel({
     name,
+    username,
     nickname,
     sex,
     age,
-    phoneNumber,
+    phone,
     avatar,
     level,
     number,
@@ -74,11 +77,12 @@ async function createNewUser(params) {
   
   return {
     _id: created._id,
+    username: created.username,
     name: created.name,
     age: created.age,
     nickname: created.nickname,
     sex: created.sex,
-    phoneNumber: created.phoneNumber,
+    phone: created.phone,
     avatar: created.avatar,
     level: created.level,
     number: created.number,
@@ -118,21 +122,24 @@ async function updateUserById(userId, update) {
 }
 
 // 登录
-async function login(phoneNumber, password) {
+async function login(username, password) {
+  console.log('User.lgin', username, password)
   password = await pbkd2Async(password, SALT, 512, 128, 'sha1')
     .then(r => r.toString())
     .catch(e => {
       console.log(e);
       throw new Error('内部错误');
     })
-  const user = await UserModel.findOne({ phoneNumber, password })
+  console.log('password-new', password)
+  const user = await UserModel.findOne({ phone: username, password })
     .catch(e => {
-      console.log(`error login in, phone ${phoneNumber}`, {err: e.stack || e});
+      console.log(`error login in, phone ${username}`, {err: e.stack || e});
     });
   if(!user) throw new Errors.LoginError('no such user');
+  console.log('User.login.user', user)
   return {
     _id: user._id,
-    phoneNumber: user.phoneNumber,
+    phone: user.phone,
     name: user.name,
     nickname: user.nickname,
     age: user.age,

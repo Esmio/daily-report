@@ -6,7 +6,7 @@ mongoose.Promise = global.Promise;
 
 mongoose.set('useFindAndModify', false);
 
-mongoose.connect(process.env.MONGO_URI || uri, { useNewUrlParser: true });
+mongoose.connect(process.env.MONGO_URI || uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const db = mongoose.connection;
 
